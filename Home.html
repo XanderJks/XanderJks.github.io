@@ -16,23 +16,18 @@
 </div>
 
 <!-- Remove 'defer' if you want widget to load faster (Will affect website loading) -->
-<script defer>
-    (function() {
-        window.VG_CONFIG = {
-            ID: "koki628edg0pyb45",
-            region: 'na', // 'eu' or 'na'corresponding to Europe and North America
-            render: 'popup', // popup or full-width
-            stylesheets: [
-                // Base Voiceglow CSS
-                "https://storage.googleapis.com/voiceglow-cdn/vg_live_build/styles.css",
-                // Add your custom css stylesheets, Can also add relative URL ('/public/your-file.css)
-            ],
-        }
-        var VG_SCRIPT = document.createElement("script");
-        VG_SCRIPT.src = "https://storage.googleapis.com/voiceglow-cdn/vg_live_build/vg_bundle.js";
-        VG_SCRIPT.defer = true; // Remove 'defer' if you want widget to load faster (Will affect website loading)
-        document.body.appendChild(VG_SCRIPT);
-    })()
+<script type="text/javascript">
+  (function(d, t) {
+      var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+      v.onload = function() {
+        window.voiceflow.chat.load({
+          verify: { projectID: '66bd038686e2b92b90919877' },
+          url: 'https://general-runtime.voiceflow.com',
+          versionID: 'production'
+        });
+      }
+      v.src = "https://cdn.voiceflow.com/widget/bundle.mjs"; v.type = "text/javascript"; s.parentNode.insertBefore(v, s);
+  })(document, 'script');
 </script>
 
 <h3>Escape the Matrix</h3>
