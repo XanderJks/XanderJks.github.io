@@ -95,7 +95,7 @@ export const MapExtension = {
     GoogleMap.style.border = '0'
     GoogleMap.loading = 'lazy'
     GoogleMap.allowFullscreen = true
-    GoogleMap.src = `https://www.google.com/maps/embed/v1/directions?key=${AIzaSyCIn6D8al_0CJw3p8IxcjtreJB_NUHYPOc&q}&origin=${origin}&destination=${destination}&zoom=${zoom}`
+    GoogleMap.src = `https://www.google.com/maps/embed/v1/directions?key=${APIKEY}&origin=${origin}&destination=${destination}&zoom=${zoom}`
 
     element.appendChild(GoogleMap)
   },
