@@ -39,7 +39,7 @@ export const FormExtension = {
             }
           </style>
 
-          <label for="name">Name</label>
+          <label for="name">Naam</label>
           <input type="text" class="name" name="name" required><br><br>
 
           <label for="email">Email</label>
