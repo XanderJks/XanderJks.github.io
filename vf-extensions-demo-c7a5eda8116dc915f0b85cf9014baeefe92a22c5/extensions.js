@@ -45,8 +45,8 @@ export const FormExtension = {
           <label for="email">Email</label>
           <input type="email" class="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Invalid email address"><br><br>
 
-          <label for="phone">Phone Number</label>
-          <input type="tel" class="phone" name="phone" required pattern="\\d+" title="Invalid phone number, please enter only numbers"><br><br>
+          <label for="phone">Bericht</label>
+          <input type="text" class="phone" name="Bericht" required><br><br>
 
           <input type="submit" class="submit" value="Submit">
         `
