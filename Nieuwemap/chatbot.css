@@ -1,0 +1,8 @@
+.c-fikloo {
+    width: 480px;
+    overflow: hidden;
+    border-radius: var(--radii-2);
+    box-shadow: 0 2px 48px rgba(19, 33, 68, 0.16), 0 0 0 1px var(--shadows-shadow4);
+    height: 90%;
+    max-height: 800px;
+}
