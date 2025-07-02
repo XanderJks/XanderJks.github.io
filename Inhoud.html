@@ -12,23 +12,18 @@
   </style>
 </head>
 <body>
+<script src="/js/chatbot-widget.js"></script>
+<!-- OF als je het in de root hebt staan: -->
+<script src="/chatbot-widget.js"></script>
+<script>
+  VastgoedAcademieChatBot.init({
+    position: 'bottom-right',
+    primaryColor: '#2563eb',
+    title: 'Vastgoed Academie',
+    subtitle: 'Jouw persoonlijke leerassistent'
+  });
+</script>
 
-  <h1>Welkom bij de Vastgoed Academie</h1>
-  <p>Deze pagina bevat een chatbot-widget als leerassistent.</p>
-
-  <!-- Laad de chatbot-script (kies de juiste padstructuur) -->
-  <script src="/js/chatbot-widget.js"></script>
-  <!-- OF als je het in de root hebt staan: -->
-  <!-- <script src="/chatbot-widget.js"></script> -->
-
-  <script>
-    VastgoedAcademieChatBot.init({
-      position: 'bottom-right',
-      primaryColor: '#2563eb',
-      title: 'Vastgoed Academie',
-      subtitle: 'Jouw persoonlijke leerassistent'
-    });
-  </script>
 
 </body>
 </html>
