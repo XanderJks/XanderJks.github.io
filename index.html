@@ -26,73 +26,22 @@
     </style>
   </head>
   <body>
-    <canvas id="confetti-canvas"></canvas>
-    <div id="flat-chat"></div>
-    <div id="voiceflow-chat-frame"></div>
-
-    <!-- Confetti Script -->
-    <script src="https://xanderjks.github.io/vf-extensions-demo-c7a5eda8116dc915f0b85cf9014baeefe92a22c5/testset.js"></script>
-
-    <!-- Voiceflow Extensions and Chat -->
-    <script type="module">
-      import { 
-        VideoExtension,
-        TimerExtension,
-        FormExtension,
-        MapExtension,
-        FileUploadExtension,
-        KBUploadExtension,
-        DateExtension,
-        ConfettiExtension,
-        FeedbackExtension 
-      } from 'https://xanderjks.github.io/vf-extensions-demo-c7a5eda8116dc915f0b85cf9014baeefe92a22c5/extensions.js';
-
-      (function (d, t) {
-        var v = d.createElement(t),
-          s = d.getElementsByTagName(t)[0];
-        v.onload = function () {
-          window.voiceflow.chat.load({
-            verify: { projectID: '68650a8ab6d64a988f5040af' },
-            url: 'https://general-runtime.voiceflow.com',
-            versionID: 'production',
-            user: {
-              name: 'Demo User',
-            },
-            render: {
-              mode: 'overlay',
-            },
-            autostart: false,
-            allowDangerousHTML: true,
-            assistant: {
-              extensions: [
-                VideoExtension,
-                TimerExtension,
-                FormExtension,
-                MapExtension,
-                FileUploadExtension,
-                KBUploadExtension,
-                DateExtension,
-                ConfettiExtension,
-                FeedbackExtension,
-              ],
-            },
-          }).then(() => {
-            window.voiceflow.chat.proactive.clear(); // clear all previous messages
-            window.voiceflow.chat.proactive.push({ 
-              type: 'text', 
-              payload: { message: 'Hallo!' }
-            }, { 
-              type: 'text', 
-              payload: { message: 'Klik Hier Om te Chatten!' }
-            });
-          });
-        };
-
-        v.src = 'https://cdn.voiceflow.com/widget/bundle.mjs';
-        v.type = 'text/javascript';
-        s.parentNode.insertBefore(v, s);
-      })(document, 'script');
-    </script>
+<script type="text/javascript">
+  (function(d, t) {
+      var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+      v.onload = function() {
+        window.voiceflow.chat.load({
+          verify: { projectID: '68650a8ab6d64a988f5040af' },
+          url: 'https://general-runtime.voiceflow.com',
+          versionID: 'production',
+          voice: {
+            url: "https://runtime-api.voiceflow.com"
+          }
+        });
+      }
+      v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs"; v.type = "text/javascript"; s.parentNode.insertBefore(v, s);
+  })(document, 'script');
+</script>
 </body>
 
 </html>
