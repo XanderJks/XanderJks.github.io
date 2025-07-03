@@ -1,20 +1,238 @@
 <!DOCTYPE html>
-<html>
-  <head>
-  <link rel="stylesheet" href="Basis.css">
-    <title>Mijn foto's</title>
-  </head>
-  <body>
-<script src="https://sage-lolly-fe71e5.netlify.app/chatbot-widget.js"></script>
-<script>
-  VastgoedAcademieChatBot.init({
-    position: 'bottom-right',
-    primaryColor: '#2563eb',
-    title: 'Vastgoed Academie',
-    subtitle: 'Jouw persoonlijke leerassistent'
-  });
-</script>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mijn Veilige AI Chatbot</title>
+    <style>
+        /* Algemene styling voor de body en tekst */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 0 25px;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
 
+        /* Styling voor de hoofdtitel */
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
 
-  </body>
+        /* Styling voor de chat-container */
+        #chat-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            max-height: 600px; /* Beperk de hoogte en maak scrollen mogelijk */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        /* Basisstyling voor individuele chatberichten */
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word; /* Zorgt ervoor dat lange woorden afbreken */
+            font-size: 0.95em;
+        }
+
+        /* Styling voor berichten van de gebruiker */
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end; /* Rechts uitlijnen */
+            border-bottom-right-radius: 5px; /* Licht andere hoek voor onderscheid */
+        }
+
+        /* Styling voor berichten van de bot */
+        .bot-message {
+            background-color: #e9ecef;
+            color: #333;
+            align-self: flex-start; /* Links uitlijnen */
+            border-bottom-left-radius: 5px; /* Licht andere hoek voor onderscheid */
+        }
+
+        /* Styling voor de invoercontainer (inputveld en knop) */
+        #input-container {
+            display: flex;
+            gap: 10px; /* Ruimte tussen invoer en knop */
+        }
+
+        /* Styling voor het tekstinvoerveld */
+        #user-input {
+            flex-grow: 1; /* Neemt beschikbare ruimte in beslag */
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none; /* Verwijder standaard focus outline */
+            transition: border-color 0.2s; /* Vloeiende overgang bij focus */
+        }
+
+        #user-input:focus {
+            border-color: #007bff; /* Blauwe rand bij focus */
+        }
+
+        /* Styling voor de verzendknop */
+        #send-button {
+            padding: 12px 25px;
+            background-color: #28a745; /* Groene achtergrond */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease; /* Vloeiende overgang bij hover */
+        }
+
+        #send-button:hover {
+            background-color: #218838;
+            transform: translateY(-1px); /* Licht omhoog bewegen bij hover */
+        }
+
+        #send-button:disabled {
+            background-color: #cccccc; /* Grijze achtergrond als uitgeschakeld */
+            cursor: not-allowed; /* Geen-toegang cursor als uitgeschakeld */
+        }
+
+        /* Styling voor statusberichten (bijv. "Chatbot denkt na...") */
+        #status-message {
+            margin-top: 15px;
+            color: #6c757d;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mijn Veilige AI Chatbot</h1>
+
+    <div id="chat-container">
+        </div>
+
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Typ je bericht hier..." autocomplete="off">
+        <button id="send-button">Verzenden</button>
+    </div>
+
+    <div id="status-message"></div>
+
+    <script>
+        // *** BELANGRIJK: VERVANG DEZE URL MET DE PUBLIEKE URL VAN JE RENDER BACKEND ***
+        // Dit is de URL die je van Render.com hebt gekregen, gevolgd door /api/chat
+        const BACKEND_API_URL = 'https://xanderjks-github-io.onrender.com/api/chat'; 
+        // Bijvoorbeeld: 'https://jouw-unieke-backend-naam.onrender.com/api/chat'
+
+        // Verkrijg referenties naar HTML-elementen
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const statusMessage = document.getElementById('status-message');
+
+        /**
+         * Genereert of haalt een unieke sessiesleutel op uit sessionStorage.
+         * Deze sleutel wordt gebruikt om de "thread" van de OpenAI Assistent te behouden
+         * over meerdere berichten van dezelfde gebruiker.
+         * @returns {string} De unieke sessiesleutel.
+         */
+        function getSessionKey() {
+            let key = sessionStorage.getItem('chatbotSessionKey');
+            if (!key) {
+                // Genereer een redelijk unieke sleutel als er nog geen is
+                key = 'user_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+                sessionStorage.setItem('chatbotSessionKey', key);
+            }
+            return key;
+        }
+
+        /**
+         * Voegt een chatbericht toe aan de weergave in de chat-container.
+         * @param {string} text - De tekst van het bericht.
+         * @param {string} sender - De afzender van het bericht ('user' of 'bot').
+         */
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = text; // Voeg de tekst toe
+            chatContainer.appendChild(messageDiv); // Voeg toe aan de chatcontainer
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll naar beneden om nieuw bericht te tonen
+        }
+
+        /**
+         * Stuurt het bericht van de gebruiker naar de backend en verwerkt het antwoord van de chatbot.
+         */
+        async function sendMessageToChatbot() {
+            const userMessage = userInput.value.trim();
+            if (userMessage === '') {
+                return; // Stuur geen leeg bericht
+            }
+
+            // Toon het bericht van de gebruiker direct in de chat
+            addMessage(userMessage, 'user');
+            userInput.value = ''; // Leeg het invoerveld
+            sendButton.disabled = true; // Schakel de verzendknop uit terwijl we wachten
+            statusMessage.textContent = 'Chatbot denkt na... Even geduld.'; // Toon statusbericht
+
+            const currentSessionKey = getSessionKey(); // Haal de sessiesleutel op
+
+            try {
+                // Stuur het bericht naar de backend API
+                const response = await fetch(BACKEND_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userMessage,
+                        sessionKey: currentSessionKey // Stuur de sessiesleutel mee voor thread management
+                    }),
+                });
+
+                // Controleer op HTTP-fouten (bijv. 400, 500)
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Fout bij verzoek: ${response.status}, ${errorData.error || 'Onbekende fout'}`);
+                }
+
+                // Verwerk het succesvolle antwoord van de backend
+                const data = await response.json();
+                addMessage(data.reply, 'bot'); // Voeg het antwoord van de bot toe aan de chat
+                statusMessage.textContent = ''; // Wis het statusbericht
+
+            } catch (error) {
+                console.error('Fout bij het versturen van bericht naar backend:', error);
+                statusMessage.textContent = 'Er is een fout opgetreden. Probeer het opnieuw.';
+                addMessage('Excuses, er ging iets mis. Probeer het later opnieuw.', 'bot'); // Vriendelijke foutmelding voor gebruiker
+            } finally {
+                sendButton.disabled = false; // Schakel de verzendknop weer in
+                userInput.focus(); // Focus terug op het invoerveld voor gemakkelijke voortzetting
+            }
+        }
+
+        // Event listeners voor het versturen van berichten
+        sendButton.addEventListener('click', sendMessageToChatbot); // Verzenden via knopklik
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessageToChatbot(); // Verzenden via Enter-toets
+            }
+        });
+
+        // Initiële welkomstboodschap van de bot bij het laden van de pagina
+        addMessage('Hallo! Ik ben je AI-assistent. Waarmee kan ik je helpen?', 'bot');
+    </script>
+</body>
 </html>
