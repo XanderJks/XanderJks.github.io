@@ -1,96 +1,111 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mijn Chatbot</title>
-    <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 20px; }
-        #chat-container { border: 1px solid #ccc; padding: 15px; min-height: 300px; overflow-y: auto; display: flex; flex-direction: column; }
-        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; }
-        .user-message { background-color: #e6f7ff; align-self: flex-end; }
-        .bot-message { background-color: #f0f0f0; align-self: flex-start; }
-        #input-container { display: flex; margin-top: 15px; }
-        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        #send-button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }
-        #send-button:hover { background-color: #0056b3; }
-        #status-message { margin-top: 10px; color: grey; font-size: 0.9em; }
-    </style>
-</head>
-<body>
-    <h1>Mijn Veilige Chatbot</h1>
-    <div id="chat-container">
-        </div>
-    <div id="input-container">
-        <input type="text" id="user-input" placeholder="Typ je bericht...">
-        <button id="send-button">Verzenden</button>
-    </div>
-    <div id="status-message"></div>
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { OpenAI } = require('openai'); // Zorg dat je de nieuwste 'openai' package hebt geïnstalleerd
 
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const statusMessage = document.getElementById('status-message');
+const app = express();
+const port = process.env.PORT || 3000;
 
-        // Voeg een bericht toe aan de chatweergave
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', `${sender}-message`);
-            messageDiv.textContent = text;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll naar beneden
-        }
+// BELANGRIJK: Zorg dat je je Assistent ID hier instelt.
+// Je kunt dit ook via een omgevingsvariabele doen als je meerdere assistenten hebt.
+const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID; // Bijvoorbeeld: "asst_YOUR_ASSISTANT_ID_HERE"
 
-        // Functie om bericht naar de backend te sturen
-        async function sendMessageToChatbot() {
-            const userMessage = userInput.value.trim();
-            if (userMessage === '') {
-                return; // Stuur geen leeg bericht
-            }
+if (!ASSISTANT_ID) {
+  console.error("Fout: OPENAI_ASSISTANT_ID is niet ingesteld in de omgevingsvariabelen of code.");
+  process.exit(1); // Stop de applicatie als de ID ontbreekt
+}
 
-            addMessage(userMessage, 'user');
-            userInput.value = ''; // Leeg het invoerveld
-            sendButton.disabled = true; // Schakel knop uit tijdens wachten
-            statusMessage.textContent = 'Chatbot denkt na...';
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-            try {
-                const response = await fetch('http://localhost:3000/api/chat', { // BELANGRIJK: Dit is de URL van je lokale backend!
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: userMessage }),
-                });
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Fout bij verzoek: ${response.status}, ${errorData.error || 'Onbekende fout'}`);
-                }
+// Opslag voor thread ID's (eenvoudig voorbeeld, in productie gebruik je een database)
+// Dit slaat de thread ID's op per sessie/gebruiker (of in dit geval, per unieke 'sessieKey' uit de frontend)
+const userThreads = {};
 
-                const data = await response.json();
-                addMessage(data.reply, 'bot'); // Voeg het antwoord van de bot toe
-                statusMessage.textContent = ''; // Statusbericht wissen
+// API Endpoint om met de assistent te chatten
+app.post('/api/chat', async (req, res) => {
+  const { message, sessionKey } = req.body; // 'sessionKey' om threads te koppelen
 
-            } catch (error) {
-                console.error('Fout bij het versturen van bericht naar backend:', error);
-                statusMessage.textContent = 'Er is een fout opgetreden. Probeer het opnieuw.';
-                addMessage('Excuses, er ging iets mis. Probeer het later opnieuw.', 'bot');
-            } finally {
-                sendButton.disabled = false; // Schakel knop weer in
-            }
-        }
+  if (!message) {
+    return res.status(400).json({ error: 'Bericht is vereist.' });
+  }
 
-        // Event listeners
-        sendButton.addEventListener('click', sendMessageToChatbot);
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendMessageToChatbot();
-            }
-        });
+  // Genereer of haal de thread ID op voor deze sessie
+  let threadId = userThreads[sessionKey];
 
-        // Initiële welkomstboodschap
-        addMessage('Hallo! Ik ben je chatbot. Waarmee kan ik je helpen?', 'bot');
-    </script>
-</body>
-</html>
+  try {
+    // 1. Maak een nieuwe thread aan als deze nog niet bestaat voor de sessie
+    if (!threadId) {
+      const thread = await openai.beta.threads.create();
+      threadId = thread.id;
+      userThreads[sessionKey] = threadId; // Sla de nieuwe thread ID op
+      console.log(`Nieuwe thread aangemaakt voor sessie ${sessionKey}: ${threadId}`);
+    } else {
+      console.log(`Bestaande thread gebruikt voor sessie ${sessionKey}: ${threadId}`);
+    }
+
+    // 2. Voeg het bericht van de gebruiker toe aan de thread
+    await openai.beta.threads.messages.create(
+      threadId,
+      { role: "user", content: message }
+    );
+
+    // 3. Start de 'run' om de assistent het bericht te laten verwerken
+    let run = await openai.beta.threads.runs.create(
+      threadId,
+      { assistant_id: ASSISTANT_ID }
+    );
+
+    // 4. Poll de status van de 'run' totdat deze 'completed' is
+    while (run.status === "queued" || run.status === "in_progress") {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wacht 0.5 seconde
+      run = await openai.beta.threads.runs.retrieve(
+        threadId,
+        run.id
+      );
+      console.log(`Run status: ${run.status}`);
+    }
+
+    // 5. Haal de laatste berichten op uit de thread
+    const messages = await openai.beta.threads.messages.list(
+      threadId,
+      { order: 'desc', limit: 1 } // Haal alleen het meest recente bericht op
+    );
+
+    // Filter de antwoorden van de assistent
+    const assistantReply = messages.data.find(msg => msg.role === 'assistant');
+
+    if (assistantReply && assistantReply.content && assistantReply.content.length > 0) {
+      // Content van Assistants API is een array van TextContentBlock
+      const textContent = assistantReply.content.find(content => content.type === 'text');
+      if (textContent) {
+        res.json({ reply: textContent.text.value, threadId: threadId });
+      } else {
+        res.status(500).json({ error: 'Geen tekstinhoud gevonden in het antwoord van de assistent.' });
+      }
+    } else {
+      res.status(500).json({ error: 'Geen antwoord ontvangen van de assistent.' });
+    }
+
+  } catch (error) {
+    console.error('Fout bij het communiceren met OpenAI Assistent API:', error);
+    if (error.response) {
+      console.error(error.response.status, error.response.data);
+      res.status(error.response.status).json({ error: error.response.data.error.message || 'Fout van OpenAI API.' });
+    } else {
+      res.status(500).json({ error: 'Interne serverfout bij het verwerken van je verzoek.' });
+    }
+  }
+});
+
+// Start de server
+app.listen(port, () => {
+  console.log(`Backend server luistert op http://localhost:${port}`);
+  console.log(`OpenAI API Key geladen: ${process.env.OPENAI_API_KEY ? 'Ja' : 'Nee'}`);
+  console.log(`OpenAI Assistant ID: ${ASSISTANT_ID}`);
+});
