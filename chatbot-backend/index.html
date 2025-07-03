@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mijn Chatbot</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 20px; }
+        #chat-container { border: 1px solid #ccc; padding: 15px; min-height: 300px; overflow-y: auto; display: flex; flex-direction: column; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; }
+        .user-message { background-color: #e6f7ff; align-self: flex-end; }
+        .bot-message { background-color: #f0f0f0; align-self: flex-start; }
+        #input-container { display: flex; margin-top: 15px; }
+        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        #send-button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+        #send-button:hover { background-color: #0056b3; }
+        #status-message { margin-top: 10px; color: grey; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>Mijn Veilige Chatbot</h1>
+    <div id="chat-container">
+        </div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Typ je bericht...">
+        <button id="send-button">Verzenden</button>
+    </div>
+    <div id="status-message"></div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const statusMessage = document.getElementById('status-message');
+
+        // Voeg een bericht toe aan de chatweergave
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll naar beneden
+        }
+
+        // Functie om bericht naar de backend te sturen
+        async function sendMessageToChatbot() {
+            const userMessage = userInput.value.trim();
+            if (userMessage === '') {
+                return; // Stuur geen leeg bericht
+            }
+
+            addMessage(userMessage, 'user');
+            userInput.value = ''; // Leeg het invoerveld
+            sendButton.disabled = true; // Schakel knop uit tijdens wachten
+            statusMessage.textContent = 'Chatbot denkt na...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/chat', { // BELANGRIJK: Dit is de URL van je lokale backend!
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: userMessage }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Fout bij verzoek: ${response.status}, ${errorData.error || 'Onbekende fout'}`);
+                }
+
+                const data = await response.json();
+                addMessage(data.reply, 'bot'); // Voeg het antwoord van de bot toe
+                statusMessage.textContent = ''; // Statusbericht wissen
+
+            } catch (error) {
+                console.error('Fout bij het versturen van bericht naar backend:', error);
+                statusMessage.textContent = 'Er is een fout opgetreden. Probeer het opnieuw.';
+                addMessage('Excuses, er ging iets mis. Probeer het later opnieuw.', 'bot');
+            } finally {
+                sendButton.disabled = false; // Schakel knop weer in
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessageToChatbot);
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessageToChatbot();
+            }
+        });
+
+        // Initiële welkomstboodschap
+        addMessage('Hallo! Ik ben je chatbot. Waarmee kan ik je helpen?', 'bot');
+    </script>
+</body>
+</html>
