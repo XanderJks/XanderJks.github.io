@@ -2,9 +2,11 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Assistent Vastgoedfotografie</title>
 </head>
-<body>
+<body style="margin:0; padding:0;">
+
   <vapi-widget
     public-key="feebc81f-9cb3-4ec9-8e22-076846b48657"
     assistant-id="8d0e1cbb-c82c-452c-b77c-4109846490aa"
@@ -26,5 +28,20 @@
   ></vapi-widget>
 
   <script src="https://unpkg.com/@vapi-ai/client-sdk-react/dist/embed/widget.umd.js" async type="text/javascript"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Even wachten tot de widget geladen is
+      setTimeout(() => {
+        const widget = document.querySelector("vapi-widget");
+        if (widget && typeof widget.open === "function") {
+          widget.open(); // chatvenster automatisch openen
+        } else {
+          console.warn("Kon de open()-functie niet vinden. Controleer VAPI API documentatie.");
+        }
+      }, 1500); // wacht 1,5 seconde voor zekerheid
+    });
+  </script>
+
 </body>
 </html>
